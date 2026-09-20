@@ -1,0 +1,66 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>NOAH — 探索β</title><style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05060b;color:#eee;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}#game{position:fixed;inset:0;width:100%;height:100%;border:0;z-index:1}#explore{position:fixed;inset:0;z-index:20;display:none;background:#05060b;touch-action:none}.on{display:block!important}.bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(.78) saturate(.9)}.shade{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,transparent 25%,rgba(0,0,0,.2) 60%,rgba(0,0,0,.78));pointer-events:none}.top{position:absolute;left:0;right:0;top:0;padding:14px 16px;background:linear-gradient(#070810dd,transparent);z-index:3;pointer-events:none}.loc{font:10px monospace;letter-spacing:.2em}.help{font:8px monospace;opacity:.62;margin-top:5px}.player{position:absolute;width:22px;height:22px;border-radius:50%;margin:-11px;background:#c88a4b;border:1px solid #ffe8c0;box-shadow:0 0 0 5px #c88a4b33,0 0 24px #c88a4b99;z-index:4;pointer-events:none;transition:left .4s ease,top .4s ease}.spot{position:absolute;z-index:5;min-width:44px;height:44px;transform:translate(-50%,-50%);border:1px solid #ddd7c766;border-radius:50%;background:#08090fcc;color:#eee;cursor:pointer}.spot span{position:absolute;top:47px;left:50%;transform:translateX(-50%);white-space:nowrap;font:9px monospace;text-shadow:0 2px 8px #000}.panel,.choices{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:min(620px,calc(100% - 28px));z-index:8}.panel{box-sizing:border-box;padding:14px 16px;background:#08090fee;border:1px solid #ffffff18;border-radius:6px;backdrop-filter:blur(12px);cursor:pointer}.meta{font:8px monospace;letter-spacing:.18em;opacity:.5;margin-bottom:6px}.speaker{font:9px monospace;color:#d19a62;margin-bottom:4px}.text{font-size:13px;line-height:1.8}.sub{font:10px monospace;opacity:.65;white-space:pre-line;margin-top:4px}.tap{text-align:right;font:8px monospace;opacity:.42;margin-top:8px}.choices{display:flex;flex-direction:column;gap:6px}.choice{padding:12px 14px;text-align:left;color:#eee;background:#08090ff5;border:1px solid #ffffff18;border-radius:5px;font-size:12px;cursor:pointer}.choice small{display:block;font:8px monospace;opacity:.55;margin-top:3px}.hidden{display:none!important}
+</style></head><body><iframe id="game" src="index.html" allow="autoplay"></iframe><div id="explore"><div class="bg" id="bg"></div><div class="shade"></div><div class="top"><div class="loc" id="loc"></div><div class="help">クリック／タップで移動　・　光る円を調べる</div></div><div class="player" id="player"></div><div class="panel hidden" id="panel"><div class="meta">EXPLORATION / INSPECTION</div><div class="speaker" id="speaker"></div><div class="text" id="text"></div><div class="sub" id="sub"></div><div class="tap" id="tap">TAP</div></div><div class="choices hidden" id="choices"></div></div><script>
+const frame=document.getElementById('game'),ex=document.getElementById('explore'),bg=document.getElementById('bg'),loc=document.getElementById('loc'),player=document.getElementById('player'),panel=document.getElementById('panel'),choices=document.getElementById('choices');
+let cw,O,imgs={},map='fountain',px=50,py=72,locked=false,mode='free',lines=[],li=0,optionalFountain=false,stallDone=false,detourStep=0;
+const maps={
+ fountain:['HELIOPOLIS / 噴水公園','fountain',[
+  ['子ども',31,48,()=>O.goScene2()],
+  ['噴水',67,70,()=>{if(optionalFountain)O.goScene3b();else inspect([{s:'',t:'噴水の水音が聞こえる。',u:'今は、特に気になるものはない。'}])}],
+  ['屋台',86,58,()=>{if(cw.G.helpedChild||cw.G.leftChild)O.goScene3();else inspect([{s:'',t:'屋台が見える。',u:'まずは噴水広場の子どもを放っておけない気がする。'}])}]
+ ]],
+ stall:['HELIOPOLIS / 屋台','stall',[
+  ['屋台',52,48,()=>O.goScene3()],
+  ['北の大通り',88,24,()=>{if(stallDone)O.goScene4();else inspect([{s:'',t:'北の大通りへ続く道。',u:'屋台の用事がまだ残っている。'}])}],
+  ['噴水広場へ',15,78,()=>open('fountain',84,70)]
+ ]],
+ district:['HELIOPOLIS / 大通り','district',[
+  ['白い塔',51,34,()=>inspect([{s:'',t:'白い塔が、少しずつ大きくなる。',u:'人が増えてくる。みな、どこかへ向かっている。'}])],
+  ['通行人',27,54,()=>inspect([{s:'通行人（すれ違いざまに）',t:'「……初めてか。案内所に行くといい」',u:''}])],
+  ['総合案内所',77,57,()=>O.goScene5()],
+  ['噴水公園へ',10,82,()=>open('fountain',84,70)]
+ ]],
+ interior:['HELIOPOLIS / 総合案内所','interior',[
+  ['受付',31,43,()=>O.goScene5()],
+  ['端末',68,42,()=>inspect([{s:'',t:'案内所の端末には、見慣れない記録が並んでいる。',u:'「EgoSys：行為は世界に残る」'}])],
+  ['受付の奥',79,70,()=>O.goScene10b()],
+  ['外へ',12,84,()=>open('district',77,57)]
+ ]],
+ detour:['HELIOPOLIS / BABEL第一階層','detour',[
+  ['オトモンについていく',35,65,()=>detourMove(1)],
+  ['さらに進む',60,48,()=>detourMove(2)],
+  ['BABEL第一階層',82,31,()=>detourMove(3)]
+ ]],
+ babel:['BABEL / 第一階層','babel',[
+  ['BABEL',52,50,()=>O.showEnding()]
+ ]]
+};
+function copyMaps(){for(const k of ['fountain','stall','district','interior','detour','babel']){try{O.showMap(k);const im=cw.document.querySelector('#mapOverlay img');if(im)imgs[k]=im.src;O.hideMap()}catch(e){}}}
+function hideGame(){try{cw.document.querySelectorAll('.screen,.map-overlay,.touch-overlay,#egosysNotif,#otomonBar').forEach(n=>n.style.display='none');cw.document.body.style.overflow='hidden'}catch(e){}}
+function showGame(){try{cw.document.querySelectorAll('.screen,.map-overlay').forEach(n=>n.style.display='')}catch(e){}}
+function open(k='fountain',x=50,y=72){map=k;mode='free';locked=false;closePanel();render();pos(x,y);hideGame();ex.classList.add('on')}
+function closeExplore(){ex.classList.remove('on');closePanel()}
+function pos(x,y){px=x;py=y;player.style.left=x+'%';player.style.top=y+'%'}
+function render(){const m=maps[map];loc.textContent=m[0];bg.style.backgroundImage=imgs[m[1]]?`url(${imgs[m[1]]})`:'';document.querySelectorAll('.spot').forEach(n=>n.remove());m[2].forEach(([label,x,y,fn])=>{const b=document.createElement('button');b.className='spot';b.style.left=x+'%';b.style.top=y+'%';b.textContent='○';const s=document.createElement('span');s.textContent=label;b.appendChild(s);b.onclick=e=>{e.stopPropagation();move(x,y,fn)};ex.appendChild(b)})}
+function move(x,y,fn){if(locked||mode!=='free')return;locked=true;pos(x,y);setTimeout(()=>{locked=false;fn&&fn()},420)}
+ex.onclick=e=>{if(locked||mode!=='free'||e.target.closest('.spot')||!panel.classList.contains('hidden')||!choices.classList.contains('hidden'))return;const r=ex.getBoundingClientRect();move(Math.max(5,Math.min(95,(e.clientX-r.left)/r.width*100)),Math.max(8,Math.min(90,(e.clientY-r.top)/r.height*100)))};
+function closePanel(){panel.classList.add('hidden');choices.classList.add('hidden');choices.innerHTML='';lines=[];li=0}
+function inspect(ls){mode='inspect';lines=ls;li=0;panel.classList.remove('hidden');choices.classList.add('hidden');showLine()}
+function showLine(){const s=lines[li];document.getElementById('speaker').textContent=s.s||'';document.getElementById('text').textContent=s.t||'';document.getElementById('sub').textContent=s.u||'';document.getElementById('tap').textContent=li<lines.length-1?'TAP':'TAP / CLOSE'}
+panel.onclick=e=>{e.stopPropagation();if(li<lines.length-1){li++;showLine()}else{closePanel();mode='free'}};
+function boot(){cw=frame.contentWindow;O={goScene2:cw.goScene2,goScene3:cw.goScene3,goScene3b:cw.goScene3b,goScene3c:cw.goScene3c,goScene4:cw.goScene4,goScene5:cw.goScene5,goScene10:cw.goScene10,goScene10b:cw.goScene10b,goScene11:cw.goScene11,showMap:cw.showMap,hideMap:cw.hideMap,showEnding:cw.showEnding,restartAll:cw.restartAll};copyMaps();
+  cw.goScene2=()=>open('fountain',50,72);
+  cw.goScene3=()=>open('stall',22,72);
+  cw.goScene3c=()=>{stallDone=true;closeExplore();O.goScene3c();};
+  cw.goScene3b=()=>{optionalFountain=true;open('fountain',84,70);};
+  cw.goScene4=()=>open('district',18,78);
+  cw.goScene5=()=>open('interior',18,82);
+  cw.goScene10=()=>{closeExplore();O.goScene10();};
+  cw.goScene10b=()=>open('interior',45,48);
+  cw.goScene11=()=>afterBattle();
+  cw.restartAll=()=>{closeExplore();optionalFountain=false;stallDone=false;detourStep=0;O.restartAll();};
+}
+function afterBattle(){detourStep=0;open('detour',18,72);inspect([{s:'OTOMON',t:'「こっちだよ、たぶん」',u:'自信満々に進む。明らかに違う方向。'}]);}
+function detourMove(step){if(step===1){inspect([{s:'',t:'……どんどん遠ざかっていく、白い塔。',u:'プレイヤーが立ち止まると、オトモンが振り返る。'}]);detourStep=1}else if(step===2){inspect([{s:'OTOMON',t:'「あれ？」',u:''},{s:'OTOMON',t:'「ごめん、こっちの方が楽しそうだったから」',u:'悪びれない。でも、少しだけ耳が下がった。'}]);detourStep=2}else if(step===3){cw.G.tookDetour=true;inspect([{s:'',t:'——BABEL第一階層に到達した。',u:'遠回りしたのに、なぜかここに来た。そういう場所なのかもしれない。'}]);detourStep=3;panel.onclick=e=>{e.stopPropagation();closePanel();mode='free';open('babel',52,72)}}}
+frame.addEventListener('load',()=>setTimeout(boot,120));
+</script></body></html>
