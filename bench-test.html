@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>NOAH — ベンチ実験 v0.5</title>
+<title>NOAH — ベンチ実験 v0.6</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;color:#eef;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
 #world{position:relative;width:100%;height:100%;background:linear-gradient(#8aa9b8 0 42%,#7f9a6d 42% 100%);overflow:hidden}
@@ -26,7 +26,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;col
 <div class="sky"></div><div class="ground"></div><div class="road"></div>
 <button class="water" id="water" type="button" aria-label="噴水を調べる"></button>
 <div class="tree t1"></div><div class="tree t2"></div><div class="bench"></div>
-<div class="hud"><div class="tag">NOAH / BENCH TEST v0.5</div><div class="hint">まずは何もしなくていい。<br>気になるものがあれば、触ってみる。</div></div>
+<div class="hud"><div class="tag">NOAH / BENCH TEST v0.6</div><div class="hint">まずは何もしなくていい。<br>気になるものがあれば、触ってみる。</div></div>
 <button class="npc" id="npc" type="button" aria-label="街の人"><b></b><span>街の人</span></button>
 <button class="omon" id="omon" type="button" aria-label="Otomon"><b></b><span>Otomon</span></button>
 <button class="sign" id="sign" type="button" aria-label="小さな看板">◇</button>
@@ -46,6 +46,8 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;col
   var eventShown=false;
   var fountainInvestigated=false;
   var fountainInvestigations=0;
+  var secondClueRevealed=false;
+  var npcReacted=false;
   var logTimer=null;
 
   function show(t,x){
@@ -60,17 +62,35 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;col
     status.textContent="WORLD: 噴水への行動を受け取った";
     fountainInvestigated=true;
     fountainInvestigations++;
+
     if(fountainInvestigations===1){
       show("噴水を調べる","水面に小さな波紋が広がる。底の近くに、銀色の何かが一瞬だけ光った。");
-    }else if(fountainInvestigations===2){
-      show("もう一度、噴水を調べる","今度は何も光らない。水面は静かに揺れている。");
-    }else{
-      show("噴水を調べる","水面は静かなままだ。さっきの光は、もう見えない。");
+      return;
     }
+
+    if(fountainInvestigations===2){
+      show("もう一度、噴水を調べる","今度は何も光らない。けれど、噴水の縁に触れると、かすかに冷たい金属の感触が残った。");
+      if(eventShown){
+        secondClueRevealed=true;
+        setTimeout(function(){
+          if(!npcReacted){
+            npcReacted=true;
+            npc.style.left="48%";
+            npc.style.top="45%";
+            show("小さな変化","街の人がこちらを見た。何かに気づいたように、噴水へ近づいてくる。");
+          }
+        },900);
+      }
+      return;
+    }
+
+    show("噴水を調べる","水面は静かなままだ。さっきの光は、もう見えない。");
   });
 
   npc.addEventListener("click",function(){
-    if(eventShown && fountainInvestigated){
+    if(npcReacted && secondClueRevealed){
+      show("街の人を調べる","街の人は噴水の縁を指でなぞっている。「ここ、さっきより冷たいんだ。」");
+    }else if(eventShown && fountainInvestigated){
       show("街の人を調べる","街の人は噴水の縁を何度も見ている。「さっき、何か光った気がしたんだ。」");
     }else if(eventShown){
       show("街の人を調べる","街の人は噴水のそばまで来て、何かを探している。");
@@ -80,7 +100,9 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;col
   });
 
   omon.addEventListener("click",function(){
-    if(fountainInvestigated){
+    if(secondClueRevealed){
+      show("Otomon","Otomonは噴水の縁に鼻を近づけている。冷たい場所を探しているようだ。");
+    }else if(fountainInvestigated){
       show("Otomon","Otomonは水面をじっと見ている。こちらを見ると、少しだけ首をかしげた。");
     }else{
       show("Otomon","Otomonは近くをのんびり歩いている。こちらを見ると、少しだけ首をかしげた。");
