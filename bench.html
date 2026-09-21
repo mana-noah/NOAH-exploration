@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>NOAH — ベンチ実験</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;color:#eef;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+#world{position:relative;width:100%;height:100%;background:linear-gradient(#8aa9b8 0 42%,#7f9a6d 42% 100%);overflow:hidden}
+.sky{position:absolute;inset:0 0 58%;background:linear-gradient(#91b3c4,#d3d6c7);}.ground{position:absolute;left:0;right:0;top:42%;bottom:0;background:linear-gradient(#829c6e,#607752)}
+.road{position:absolute;left:0;right:0;top:60%;height:16%;background:#6b6b68;opacity:.75}
+.water{position:absolute;width:150px;height:72px;border-radius:50%;left:50%;top:44%;transform:translate(-50%,-50%);background:#739eaa;border:3px solid #b7d2d4;box-shadow:0 0 0 12px #b8c4b4}
+.bench{position:absolute;left:50%;top:73%;transform:translate(-50%,-50%);width:150px;height:16px;background:#704d35;border-radius:5px;box-shadow:0 20px 0 -3px #513927}
+.tree{position:absolute;width:110px;height:110px;border-radius:50%;background:#48664a;bottom:27%;}.tree:after{content:"";position:absolute;width:18px;height:80px;background:#604936;left:46px;top:82px}.t1{left:8%}.t2{right:9%;bottom:32%}
+.npc,.omon{position:absolute;z-index:5;border:0;background:transparent;color:#fff;cursor:pointer;text-shadow:0 2px 5px #000}.npc{left:22%;top:55%}.npc b{display:block;width:28px;height:38px;border-radius:12px 12px 7px 7px;background:#d7b49a;margin:auto}.npc span,.omon span{display:block;font-size:11px;margin-top:4px}.omon{left:68%;top:67%}.omon b{display:block;width:34px;height:24px;border-radius:55% 45% 45% 55%;background:#e8c47a;margin:auto}.sign{position:absolute;right:10%;top:50%;font-size:34px;cursor:pointer}.hud{position:absolute;left:14px;right:14px;top:14px;z-index:10;display:flex;justify-content:space-between;align-items:flex-start}.tag{font:10px monospace;letter-spacing:.16em;background:#091018bb;padding:8px 10px;border:1px solid #ffffff22;border-radius:6px}.hint{font-size:11px;opacity:.65;text-align:right;max-width:260px}.log{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);width:min(600px,calc(100% - 28px));z-index:12;background:#081018e8;border:1px solid #ffffff22;border-radius:8px;padding:14px;box-sizing:border-box;display:none}.log.on{display:block}.log h3{margin:0 0 6px;font-size:12px}.log p{margin:0;font-size:13px;line-height:1.7}.fade{animation:fade 1s ease}@keyframes fade{from{opacity:.2}to{opacity:1}}@media(prefers-reduced-motion:reduce){.fade{animation:none}}
+</style>
+</head>
+<body>
+<main id="world">
+<div class="sky"></div><div class="ground"></div><div class="road"></div><div class="water"></div>
+<div class="tree t1"></div><div class="tree t2"></div><div class="bench"></div>
+<div class="hud"><div class="tag">NOAH / BENCH TEST</div><div class="hint">まずは何もしなくていい。<br>気になるものがあれば、触ってみる。</div></div>
+<button class="npc" id="npc" type="button" aria-label="街の人"><b></b><span>街の人</span></button>
+<button class="omon" id="omon" type="button" aria-label="Otomon"><b></b><span>Otomon</span></button>
+<button class="sign" id="sign" type="button" aria-label="小さな看板">◇</button>
+<div class="log" id="log" aria-live="polite"><h3 id="logTitle"></h3><p id="logText"></p></div>
+</main>
+<script>
+(function(){
+const npc=document.getElementById('npc'), omon=document.getElementById('omon'), sign=document.getElementById('sign'), log=document.getElementById('log'), title=document.getElementById('logTitle'), text=document.getElementById('logText');
+let elapsed=0, eventShown=false, omonMoved=false;
+function show(t,x){title.textContent=t;text.textContent=x;log.classList.add('on');setTimeout(()=>log.classList.remove('on'),5200)}
+setInterval(()=>{
+ elapsed++;
+ if(elapsed===12&&!eventShown){eventShown=true;npc.classList.add('fade');show('小さな変化','街の人が噴水のそばまで来て、何かを探している。こちらには気づいていない。');}
+ if(elapsed===28&&!omonMoved){omonMoved=true;omon.style.left='58%';omon.style.top='57%';omon.classList.add('fade');show('Otomon','Otomonが噴水の方へ歩いていく。');}
+},1000);
+npc.addEventListener('click',()=>show('街の人','「……さっき、あの子が何か落とした気がするんだけどな」'));
+omon.addEventListener('click',()=>show('Otomon','Otomonは水面をじっと見ている。こちらを見ると、少しだけ首をかしげた。'));
+sign.addEventListener('click',()=>show('小さな看板','「噴水のそばで、時々不思議なことが起こる。」\nそれ以上は何も書かれていない。'));
+})();
+</script>
+</body>
+</html>
