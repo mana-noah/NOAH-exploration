@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>NOAH — ベンチ実験 v0.4</title>
+<title>NOAH — ベンチ実験 v0.5</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;color:#eef;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
 #world{position:relative;width:100%;height:100%;background:linear-gradient(#8aa9b8 0 42%,#7f9a6d 42% 100%);overflow:hidden}
@@ -14,7 +14,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;col
 .water:active{transform:translate(-50%,-50%) scale(.96)}
 .bench{position:absolute;left:50%;top:73%;transform:translate(-50%,-50%);width:150px;height:16px;background:#704d35;border-radius:5px;box-shadow:0 20px 0 -3px #513927}
 .tree{position:absolute;width:110px;height:110px;border-radius:50%;background:#48664a;bottom:27%}.tree:after{content:"";position:absolute;width:18px;height:80px;background:#604936;left:46px;top:82px}.t1{left:8%}.t2{right:9%;bottom:32%}
-.npc,.omon{position:absolute;z-index:9;border:0;background:transparent;color:#fff;cursor:pointer;text-shadow:0 2px 5px #000}.npc{left:22%;top:55%}.npc b{display:block;width:28px;height:38px;border-radius:12px 12px 7px 7px;background:#d7b49a;margin:auto}.npc span,.omon span{display:block;font-size:11px;margin-top:4px}.omon{left:68%;top:67%}.omon b{display:block;width:34px;height:24px;border-radius:55% 45% 45% 55%;background:#e8c47a;margin:auto}
+.npc,.omon{position:absolute;z-index:9;border:0;background:transparent;color:#fff;cursor:pointer;text-shadow:0 2px 5px #000}.npc{left:22%;top:55%;transition:left .8s ease,top .8s ease}.npc b{display:block;width:28px;height:38px;border-radius:12px 12px 7px 7px;background:#d7b49a;margin:auto}.npc span,.omon span{display:block;font-size:11px;margin-top:4px}.omon{left:68%;top:67%;transition:left .8s ease,top .8s ease}.omon b{display:block;width:34px;height:24px;border-radius:55% 45% 45% 55%;background:#e8c47a;margin:auto}
 .sign{position:absolute;right:10%;top:50%;font-size:34px;cursor:pointer;z-index:9}
 .hud{position:absolute;left:14px;right:14px;top:14px;z-index:20;display:flex;justify-content:space-between;align-items:flex-start}.tag{font:10px monospace;letter-spacing:.16em;background:#091018cc;padding:8px 10px;border:1px solid #ffffff22;border-radius:6px}.hint{font-size:11px;opacity:.7;text-align:right;max-width:260px}
 .log{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);width:min(600px,calc(100% - 28px));z-index:30;background:#081018ee;border:1px solid #ffffff33;border-radius:8px;padding:14px;box-sizing:border-box;display:none}.log.on{display:block}.log h3{margin:0 0 6px;font-size:12px}.log p{margin:0;font-size:13px;line-height:1.7}
@@ -26,7 +26,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;col
 <div class="sky"></div><div class="ground"></div><div class="road"></div>
 <button class="water" id="water" type="button" aria-label="噴水を調べる"></button>
 <div class="tree t1"></div><div class="tree t2"></div><div class="bench"></div>
-<div class="hud"><div class="tag">NOAH / BENCH TEST v0.4</div><div class="hint">まずは何もしなくていい。<br>気になるものがあれば、触ってみる。</div></div>
+<div class="hud"><div class="tag">NOAH / BENCH TEST v0.5</div><div class="hint">まずは何もしなくていい。<br>気になるものがあれば、触ってみる。</div></div>
 <button class="npc" id="npc" type="button" aria-label="街の人"><b></b><span>街の人</span></button>
 <button class="omon" id="omon" type="button" aria-label="Otomon"><b></b><span>Otomon</span></button>
 <button class="sign" id="sign" type="button" aria-label="小さな看板">◇</button>
@@ -44,6 +44,8 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;col
   var text=document.getElementById("logText");
   var status=document.getElementById("status");
   var eventShown=false;
+  var fountainInvestigated=false;
+  var fountainInvestigations=0;
   var logTimer=null;
 
   function show(t,x){
@@ -55,20 +57,34 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;col
   }
 
   water.addEventListener("click",function(){
-    status.textContent="JS TEST: 噴水クリック検知";
-    show("噴水を調べる","水面に小さな波紋が広がる。底の近くに、銀色の何かが一瞬だけ光った。");
+    status.textContent="WORLD: 噴水への行動を受け取った";
+    fountainInvestigated=true;
+    fountainInvestigations++;
+    if(fountainInvestigations===1){
+      show("噴水を調べる","水面に小さな波紋が広がる。底の近くに、銀色の何かが一瞬だけ光った。");
+    }else if(fountainInvestigations===2){
+      show("もう一度、噴水を調べる","今度は何も光らない。水面は静かに揺れている。");
+    }else{
+      show("噴水を調べる","水面は静かなままだ。さっきの光は、もう見えない。");
+    }
   });
 
   npc.addEventListener("click",function(){
-    if(eventShown){
-      show("街の人を調べる","街の人は噴水の縁を何度も見ている。足元には小さな銀色の欠片が落ちている。");
+    if(eventShown && fountainInvestigated){
+      show("街の人を調べる","街の人は噴水の縁を何度も見ている。「さっき、何か光った気がしたんだ。」");
+    }else if(eventShown){
+      show("街の人を調べる","街の人は噴水のそばまで来て、何かを探している。");
     }else{
       show("街の人","まだ何かを探している様子はない。");
     }
   });
 
   omon.addEventListener("click",function(){
-    show("Otomon","Otomonは水面をじっと見ている。こちらを見ると、少しだけ首をかしげた。");
+    if(fountainInvestigated){
+      show("Otomon","Otomonは水面をじっと見ている。こちらを見ると、少しだけ首をかしげた。");
+    }else{
+      show("Otomon","Otomonは近くをのんびり歩いている。こちらを見ると、少しだけ首をかしげた。");
+    }
   });
 
   sign.addEventListener("click",function(){
@@ -77,6 +93,8 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#091018;col
 
   setTimeout(function(){
     eventShown=true;
+    npc.style.left="43%";
+    npc.style.top="47%";
     show("小さな変化","街の人が噴水のそばまで来て、何かを探している。");
   },12000);
 
